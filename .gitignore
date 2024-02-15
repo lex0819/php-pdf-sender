@@ -1,0 +1,6 @@
+nginx
+services
+sqldata
+.DS_Store
+credentials
+PHPMailer

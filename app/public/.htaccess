@@ -1,0 +1,22 @@
+#включаем rewrite_mod
+RewriteEngine On
+Options FollowSymLinks
+
+#правило отменяется если это реальный файл, а выполняется только если это не реальный файл
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule .*  index.php?systemurlquerystring=$0 [QSA]
+#RewriteRule ^([a-z-]+)/?(\d+)?/?$  index.php?c=$1&id=$2
+
+#запрет листинга директорий
+Options -Indexes
+
+#запрет доступа к файлам php и т.д. служебным, шаблонам. Нельзя запрещать css отвалятся стили
+<FilesMatch "\.(php|html)$">
+	Deny from all
+</FilesMatch>
+
+#разрешение только на доступ к главной точке входа
+<FilesMatch "^index\.php$">
+	Allow from all
+</FilesMatch>
+

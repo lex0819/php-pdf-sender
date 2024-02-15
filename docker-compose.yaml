@@ -1,0 +1,53 @@
+version: "3.9"
+services:
+  db: #this is host
+    image: mariadb:latest
+    container_name: db
+    restart: always
+    ports:
+      - 3307:3306
+    volumes:
+      - "./sqldata:/var/lib/mysql"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: test_database
+      MYSQL_USER: db_user
+      MYSQL_PASSWORD: db_user_pass
+
+  webserver:
+    image: nginx:latest
+    container_name: nginx
+    depends_on:
+      - db
+    ports:
+      - 8000:80
+    restart: always
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
+      - ./app:/app
+
+  php:
+    image: "lex-php"
+    container_name: php
+    build: services/php
+    depends_on:
+      - db
+    links:
+      - db
+    volumes:
+      - ./app:/app
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadm
+    depends_on:
+      - db
+    links:
+      - db
+    restart: always
+    ports:
+      - 8001:80
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
