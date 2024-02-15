@@ -20,4 +20,9 @@
 
 ## Solution
 
-Telegram_bot called **pdfsender**.
+См сервис на моем хостинге
+https://pdf-sender.elenivan.ru
+
+рассылка почты с моего почтовика на хостинге
+
+рассылка на Телеграм в мой бот **pdfsender**.
