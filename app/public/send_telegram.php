@@ -1,6 +1,6 @@
 <?php
 
-$uri_api = "https://api.telegram.org/bot" . TOKEN . "/sendDocument?chat_id=" . CHAT_ID;
+$uri_api = "https://api.telegram.org/bot" . BOT_TOKEN . "/sendDocument?chat_id=" . CHAT_ID;
 
 $file_name = $_SESSION['file_pdf'];
 
