@@ -6,7 +6,7 @@
  */
 
 include_once './functions.php';
-include_once $_SERVER['DOCUMENT_ROOT'] . '/credentials/cred_telegram.php';
+include_once $_SERVER['DOCUMENT_ROOT'] . '/init.php';
 
 header('Content-Type: text/html; charset=utf-8'); // на всякий случай досообщим PHP, что все в кодировке UTF-8
 
@@ -26,6 +26,7 @@ $bot_state = ''; // состояние бота, по-умолчанию пус�
 // который можно смотреть и понимать, что происходит при запросе к боту
 // Позже, когда все будет работать закомментируйте эту строку:
 file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/logs/message.txt', print_r($data, true), FILE_APPEND | LOCK_EX);
+file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/logs/row_message.txt', $response, FILE_APPEND | LOCK_EX);
 
 // Основной код: получаем сообщение, что юзер отправил боту и 
 // заполняем переменные для дальнейшего использования
@@ -109,4 +110,7 @@ $text
             set_bot_state($chat_id, '');
         }
     }
+
+    // Check new chat_id to bot
+    setNewUserBot($chat_id, $user_name, $first_name, $last_name);
 }

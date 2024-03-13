@@ -19,7 +19,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $_SESSION['name'] = $name;
     $_SESSION['email'] = $email;
+    $_SESSION['errors_email'] = '';
     $_SESSION['telegram'] = $telegram;
+    $_SESSION['errors_telegram'] = '';
 
     if (mb_strlen($name, 'UTF-8') < 3) {
         $_SESSION['errors_name'] = 'Name is not valid!';
@@ -37,7 +39,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $pattern_telegram = "/.*\B@(?=\w{5,32}\b)[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*.*/";
     if (empty($telegram) || !preg_match($pattern_telegram, $telegram)) {
-        $_SESSION['errors_telegram'] = 'Telegram is not valid!';
+        $_SESSION['errors_telegram'] = "Telegram is not valid! \r\n";
+    } elseif (empty(serchUserTelegram(substr(trim($telegram), 1)))) {
+        $_SESSION['errors_telegram'] .= "User is not a friend of the bot! \r\n";
     } else {
         unset($_SESSION['errors_telegram']);
         $check_telegram = true;
