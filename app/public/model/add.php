@@ -1,9 +1,9 @@
 <?php
 session_start();
-include_once('init.php');
+require_once __DIR__ . '/init.php';
 
 if (empty($_POST)) {
-    include_once('view/add.php');
+    require_once('../view/add.php');
     exit;
 }
 
@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($telegram) || !preg_match($pattern_telegram, $telegram)) {
         $_SESSION['errors_telegram'] = "Telegram is not valid! \r\n";
     } elseif (empty(serchUserTelegram(substr(trim($telegram), 1)))) {
-        $_SESSION['errors_telegram'] .= "User is not a friend of the bot! \r\n";
+        $_SESSION['errors_telegram'] .= "User is not a friend with the bot! \r\n";
     } else {
         unset($_SESSION['errors_telegram']);
         $check_telegram = true;
@@ -54,9 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'telegram' => $telegram
         ];
         $id = subscriberAdd($fields);
-        header("Location: " . BASE_URL . "subscribers.php");
+        // var_dump($_SERVER['HTTP_HOST']);
+        header("Location: https://" . $_SERVER['HTTP_HOST'] . "/model/subscribers.php");
         exit;
     } else {
-        include_once('view/add_post.php');
+        include_once('../view/add_post.php');
     }
 }

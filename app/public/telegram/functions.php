@@ -1,7 +1,7 @@
 <?php
 
 // функция отправки сообщения от бота в диалог с юзером
-function message_to_telegram($bot_token, $chat_id, $text, $reply_markup = '')
+function message_to_telegram(string $bot_token, int $chat_id, string $text, string $reply_markup = '')
 {
     $ch = curl_init();
     $ch_post = [
@@ -22,16 +22,17 @@ function message_to_telegram($bot_token, $chat_id, $text, $reply_markup = '')
 }
 
 // сохранить состояние бота для пользователя
-function set_bot_state($chat_id, $data)
+function set_bot_state(int $chat_id, string $data)
 {
-    file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/users/' . $chat_id . '.txt', $data);
+    file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/users/' . strval($chat_id) . '.txt', $data);
 }
 
 // получить текущее состояние бота для пользователя
-function get_bot_state($chat_id)
+function get_bot_state(int $chat_id): string
 {
-    if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/users/' . $chat_id . '.txt')) {
-        $data = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/users/' . $chat_id . '.txt');
+    $chat_id_str = strval($chat_id);
+    if (file_exists($_SERVER['DOCUMENT_ROOT'] . '/users/' . $chat_id_str . '.txt')) {
+        $data = file_get_contents($_SERVER['DOCUMENT_ROOT'] . '/users/' . $chat_id_str . '.txt');
         return $data;
     } else {
         return '';
@@ -39,9 +40,15 @@ function get_bot_state($chat_id)
 }
 
 // проверить, что пришел новый юзер и записать его chat_id в базу friends_of_bot
-function setNewUserBot(int $chat_id, string $user_name, $first_name, $last_name): int
+function setNewUserBot(int $chat_id, string $user_name, string $first_name, string $last_name): bool
 {
-    $id = -1;
+    echo '<pre>$chat_id';
+    var_dump($chat_id);
+    echo '</pre>';
+    echo '<pre>serchChatId($chat_id)';
+    var_dump(serchChatId($chat_id));
+    echo '</pre>';
+
     // Check new chat_id to bot
     if (empty(serchChatId($chat_id))) {
         # put new chat_id to database
@@ -51,12 +58,14 @@ function setNewUserBot(int $chat_id, string $user_name, $first_name, $last_name)
             'first_name' => $first_name,
             'last_name' => $last_name,
         ];
-        $id = addChatId($fields);
+        addChatId($fields);
+        return true;
+    }else{
+        return false;
     }
-    return $id;
 }
 
-function pdf_to_telegram($bot_token, $chat_id, $file_name)
+function pdf_to_telegram(string $bot_token, int $chat_id, string $file_name)
 {
     // Create CURL object
     $ch = curl_init();
@@ -85,7 +94,7 @@ function pdf_to_telegram($bot_token, $chat_id, $file_name)
     return json_decode($result, true);
 }
 
-function multi_curl_pdf_to_telegram($bot_token, $array_chat_id, $file_name)
+function multi_curl_pdf_to_telegram(string $bot_token, array $array_chat_id, string $file_name): array
 {
     // Create MULTI_CURL object
     $multi_curl_handle = curl_multi_init();
@@ -124,21 +133,38 @@ function multi_curl_pdf_to_telegram($bot_token, $array_chat_id, $file_name)
     } while ($running);
 
     $result = [];
+    // echo '<pre>';
+    // var_dump($array_curls);
+    // echo '</pre>';
     foreach ($array_curls as $ch) {
         $response = curl_multi_getcontent($ch);
 
         $dd = json_decode($response, true);
+        // echo '<pre>';
         // var_dump($dd);
+        // echo '</pre>';
 
-        // foreach ($dd['result']['chat']['username'] as $key) {
-        //     array_push($result, $key);
-        // }
-
-        $result[$dd['result']['chat']['username']] = $dd['ok'];
+        $index_of_name = '';
+        if (!empty($dd['result']['chat']['username'])) {
+            $index_of_name = $dd['result']['chat']['username'];
+        } elseif (!empty($dd['result']['chat']['first_name'])) {
+            $index_of_name = $dd['result']['chat']['first_name'];
+        } else {
+            $index_of_name = 'noname';
+        }
+        $result[$index_of_name] = $dd['ok'];
 
         curl_multi_remove_handle($multi_curl_handle, $ch);
         curl_close($ch);
     }
     curl_multi_close($multi_curl_handle);
     return $result;
+}
+
+function setLogs(mixed $data)
+{
+    // Для отладки, добавим запись полученных декодированных данных в файл message.txt, 
+    // который можно смотреть и понимать, что происходит при запросе к боту
+    // Позже, когда все будет работать закомментируйте эту строку:
+    file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/logs/message.txt', var_export($data, true), FILE_APPEND | LOCK_EX);
 }

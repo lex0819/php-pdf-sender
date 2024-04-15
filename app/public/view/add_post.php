@@ -1,5 +1,5 @@
 <?php
-include_once(__DIR__ . '/header.php');
+require_once('../view/header.php');
 ?>
 
 <body>

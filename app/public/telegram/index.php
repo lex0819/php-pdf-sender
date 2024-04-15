@@ -5,38 +5,53 @@
  *   05.07.2021
  */
 
-include_once './functions.php';
-include_once $_SERVER['DOCUMENT_ROOT'] . '/init.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/model/init.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/credentials/cred_telegram.php';
+require_once $_SERVER['DOCUMENT_ROOT'] . '/telegram/functions.php';
 
-header('Content-Type: text/html; charset=utf-8'); // на всякий случай досообщим PHP, что все в кодировке UTF-8
+header('Content-Type: text/html; charset=utf-8'); // на всякий случай сообщим PHP, что все в кодировке UTF-8
 
 $bot_token = BOT_TOKEN; // токен вашего бота
+$owner_chat_id = OWNER_CHAT_ID; // owner's chat_id with own bot
 /**
  * php://input
- * is a cpesial stream 
+ * is a special stream 
  * raw POST request 
  */
-$response = file_get_contents('php://input'); // весь ввод перенаправляем в $response
-$data = json_decode($response, true); // декодируем json-закодированные-текстовые данные в PHP-массив
 
-$order_chat_id = CHAT_ID;  //chat_id менеджера компании для заявок
+$response = json_decode(file_get_contents('php://input'), true); // весь ввод перенаправляем в $response, декодируем json-закодированные-текстовые данные в PHP-массив
+
+$order_chat_id = GROUP_CHAT_ID;  //chat_id менеджера компании для заявок
 $bot_state = ''; // состояние бота, по-умолчанию пустое
 
-// Для отладки, добавим запись полученных декодированных данных в файл message.txt, 
-// который можно смотреть и понимать, что происходит при запросе к боту
-// Позже, когда все будет работать закомментируйте эту строку:
-file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/logs/message.txt', print_r($data, true), FILE_APPEND | LOCK_EX);
-file_put_contents($_SERVER['DOCUMENT_ROOT'] . '/logs/row_message.txt', $response, FILE_APPEND | LOCK_EX);
+setLogs("\n\n");
+setLogs($response);
 
 // Основной код: получаем сообщение, что юзер отправил боту и 
 // заполняем переменные для дальнейшего использования
-if (!empty($data['message']['text'])) {
-    $chat_id = $data['message']['from']['id'];
-    $user_name = $data['message']['from']['username'];
-    $first_name = $data['message']['from']['first_name'];
-    $last_name = $data['message']['from']['last_name'];
-    $text = trim($data['message']['text']);
+if (!empty($response['message']['text'])) {
+    $chat_id = $response['message']['from']['id'];
+    $user_name = isset($response['message']['from']['username']) ? $response['message']['from']['username'] : '';
+    $first_name = $response['message']['from']['first_name'];
+    $last_name = isset($response['message']['from']['last_name']) ? $response['message']['from']['last_name'] : '';
+    $text = trim($response['message']['text']);
     $text_array = explode(" ", $text);
+
+    $temp_log = "$chat_id, $user_name, $first_name, $last_name, $text";
+    setLogs("\n");
+    setLogs($temp_log);
+
+    //Check new chat_id to bot
+    $is_new = setNewUserBot($chat_id, $user_name, $first_name, $last_name);
+    if($is_new ){
+        $owner_text = strval($chat_id) . ", " . $user_name . ", " . $first_name . ", " . $last_name . ", " . $text . " \n\n";
+
+        echo '<pre>$owner_text';
+        var_dump($owner_text);
+        echo '</pre>';
+        // send me issue about new user who've linked to my bot
+        message_to_telegram($bot_token, $owner_chat_id, $owner_text);
+    }
 
     // if user wrote to bot something another
     $user_date = date('d/m/Y H:i:s', $data['message']['date']);
@@ -54,11 +69,13 @@ $text
 ";
         message_to_telegram($bot_token, $order_chat_id, $text_return);
         set_bot_state($chat_id, ''); // не забудем почистить состояние на пустоту, после отправки заявки
-    }
-    // если состояние бота пустое -- то обычные запросы
-    else {
-        // вывод информации Помощь
-        if ($text == '/help') {
+
+        setLogs('/order');
+    } else {
+        // если состояние бота пустое -- то обычные запросы
+        setLogs($text);
+        if ($text === '/help') {
+            // вывод информации Помощь
             $text_return = "Привет, $first_name $last_name, вот команды, что я понимаю: 
     /help - список команд
     /about - о нас
@@ -66,18 +83,14 @@ $text
     ";
             message_to_telegram($bot_token, $chat_id, $text_return);
             set_bot_state($chat_id, '/help');
-        }
-
-        // вывод информации о нас
-        elseif ($text == '/about') {
+        } elseif ($text === '/about') {
+            // вывод информации о нас
             $text_return = "pdfsender_bot:
     Я пример простого бота для телеграм, написанного на простом PHP.";
             message_to_telegram($bot_token, $chat_id, $text_return);
             set_bot_state($chat_id, '/about');
-        }
-
-        // enter start. It's start of communication
-        elseif ($text == '/start') {
+        } elseif ($text === '/start') {
+            // enter start. It's start of communication
             $text_return = "Hi $first_name $last_name! 
     I'm glad to see you! 
     You've connected to me!
@@ -85,19 +98,15 @@ $text
 ";
             message_to_telegram($bot_token, $chat_id, $text_return);
             set_bot_state($chat_id, '/start');
-        }
-
-        // переход в режим Заявки
-        elseif ($text == '/order') {
+        } elseif ($text === '/order') {
+            // переход в режим Заявки
             $text_return = "$first_name $last_name, для подтверждения Заявки введите текст вашей заявки и нажмите отправить. 
 Наши специалисты свяжутся с вами в ближайшее время!
 ";
             message_to_telegram($bot_token, $chat_id, $text_return);
             set_bot_state($chat_id, '/order');
-        }
-
-        // if user wrote to bot something another
-        else {
+        } else {
+            // if user wrote to bot something another
             $text_return = "Hi $first_name $last_name!
             You wrote $text to me 
             at $user_date.
@@ -110,7 +119,4 @@ $text
             set_bot_state($chat_id, '');
         }
     }
-
-    // Check new chat_id to bot
-    setNewUserBot($chat_id, $user_name, $first_name, $last_name);
 }

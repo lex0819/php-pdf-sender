@@ -1,7 +1,5 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/helpers/db.php';
-
 function serchChatId(int $chat_id): array
 {
     $sql = "SELECT * FROM freinds_of_bot WHERE chat_id = :chat_id";

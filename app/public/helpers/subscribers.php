@@ -1,6 +1,5 @@
 <?php
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/helpers/db.php';
 //all subscribers from DB
 function listOfSubscribers(): array
 {

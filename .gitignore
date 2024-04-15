@@ -4,3 +4,4 @@ sqldata
 .DS_Store
 credentials
 PHPMailer
+test
